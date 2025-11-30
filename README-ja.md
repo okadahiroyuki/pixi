@@ -97,6 +97,35 @@ version = "0.1.0"
 ```
 `platforms`にはお使いのPCのアーキテクチャに従って、　"win-64", "linux-64", "osx-64", "osx-arm64" などが自動的に設定されます。
 
+
+`pixi init` 時に --format オプションで pyproject を指定することで、 pixi.toml ではなく pyproject.toml でパッケージ管理を行うことが可能です。
+```
+pixi init my_workspace --format pyproject
+```
+```
+pyproject.toml
+
+[project]
+authors = [{name = "YOUR-NAME", email = "YOUR-EMAIL"}]
+dependencies = []
+name = "my_workspace"
+requires-python = ">= 3.11"
+version = "0.1.0"
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.pypi-dependencies]
+my_workspace = { path = ".", editable = true }
+
+[tool.pixi.tasks]
+```
+
 ### 依存関係の管理
 ワークスペースを作成したら、依存関係を追加できます。
 Pixiでは、ワークスペースに依存関係を追加するために`pixi add`コマンドを使用します。このコマンドはデフォルトで、conda依存関係を`pixi.toml`に追加し、依存関係を解決し、ロックファイルを書き込み、環境内にパッケージをインストールします。
