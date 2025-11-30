@@ -142,7 +142,66 @@ Pixiの環境はすべて分離されていますが、中央キャッシュデ�
 つまり、同じパッケージを持つ複数の環境を作成でき、個々のファイルはディスク上に一度だけ保存されることになります。
 
 
+### 複数の環境
+Pixiでは複数の環境を作成することも可能です。
+これはpyproject.tomlファイルの依存関係グループ機能と連携して効果的に機能します。
 
+依存関係グループ（Pixiでは機能と呼称）としてtestという名前を追加しましょう。
+そしてこのグループにpytestパッケージを追加します。
+```
+pixi add --pypi --feature test pytest
+```
+これにより、パッケージはPEP 735に従って依存関係グループに追加されます。
+
+```
+[dependency-groups]
+test = ["pytest"]
+```
+pyproject.tomlに依存関係グループを追加すると、Pixiはこれらを機能として認識します。
+機能には依存関係、タスク、チャネルなどの集合を含めることができます。
+```
+pixi workspace environment add default --solve-group default --force
+pixi workspace environment add test --feature test --solve-group default
+```
+その結果、次のようになります,
+```
+[tool.pixi.environments]
+default = { solve-group = "default" }
+test = { features = ["test"], solve-group = "default" }
+```
+環境名を指定しない場合、Pixiはデフォルト環境を使用します。
+テスト環境をインストールまたは実行したい場合は、--environmentフラグで環境を指定できます。
+```
+pixi install --environment test
+pixi run --environment test pytest
+```
+
+### コードを実行させる
+pixi_pyパッケージにコードを追加しましょう。
+src/pixi_py/__init__.pyファイルに新しい関数を追加します。
+```
+from rich import print
+
+def hello():
+    return "Hello, [bold magenta]World[/bold magenta]!", ":vampire:"
+
+def say_hello():
+    print(*hello())
+```
+次に、PyPIから`rich`と依存関係を追加します。
+```
+pixi add --pypi rich
+```
+これを実行して動作するか確認しましょう：
+```
+pixi run python -c 'import pixi_py; pixi_py.say_hello()'
+```
+次のように出力されるはずです。
+```
+Hello, World! 🧛
+```
+
+### 
 
 
 
