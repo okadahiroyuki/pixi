@@ -75,6 +75,6 @@ ros2 run turtlesim turtlesim_node
 
 これで、pixi 上で ROS 2 が動作しました。おめでとうございます 🎉
 
-![エビフライトライアングル](http://i.imgur.com/Jjwsc.jpg "サンプル")
+![エビフライトライアングル](https://github.com/user-attachments/assets/9424c44b-b7c0-48f4-8e7d-501131e9e9e5 "サンプル")
 
 
