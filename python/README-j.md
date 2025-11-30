@@ -271,9 +271,34 @@ pixi list pygments
 Pixi は Python プロジェクト管理を柔軟で強力にします。
 
 
-
-
 ## pyproject.toml
+Pixi では、pyproject.toml をマニフェストファイルとして使用することをサポートしています。
+これにより、すべての設定を 1つのファイルにまとめることができます。
+
+pyproject.toml は Python プロジェクトの標準です。
+Python プロジェクト以外では pyproject.toml を使わないことを推奨します。
+その他のタイプのプロジェクトでは、pixi.toml のほうが適しています。
+
+### pyproject.toml の初期セットアップ
+すでに pyproject.toml が存在する場合、そのフォルダで:
+```
+pixi init
+```
+を実行できます。
+Pixi は自動的に以下を行います：
+1. [tool.pixi.workspace] セクションの追加
+— Pixi に必要な platform と channel の情報が入る
+2. 現在のプロジェクトを editable な PyPI 依存として追加
+3. .gitignore と .gitattributes に Pixi 用のデフォルト設定を追加
+
+pyproject.toml が存在しない場合は:
+```
+pixi init --format pyproject
+```
+を実行すると、Pixi がゼロから適切なデフォルトを含んだ pyproject.toml を生成します。
+
+
+
 
 
 ## Pytorch Installation
