@@ -215,14 +215,97 @@ Pixiの基本的な使い方を確認していきましょう。
 
 ### ワークスペースの管理
 - pixi init -  現在のディレクトリに新しいPixiマニフェストを作成
-- pixi add - add a dependency to your manifest
-- pixi remove - remove a dependency from your manifest
-- pixi update - update dependencies in your manifest
-- pixi upgrade - upgrade the dependencies in your manifest to the latest versions, even if you pinned them to a specific version
-- pixi lock - create or update the lockfile for your manifest
-- pixi info - show information about your workspace
-- pixi run - run a task defined in your manifest or any command in the current environment
-- pixi shell - start a shell in the current environment
-- pixi list - list all dependencies in the current environment
-- pixi tree - show a tree of dependencies in the current environment
-- pixi clean - remove the environment from your machine
+- pixi add - マニフェストに依存関係を追加
+- pixi remove - マニフェストから依存関係を削除
+- pixi update - マニフェスト内の依存関係を更新
+- pixi upgrade - 特定のバージョンに固定している場合でも、マニフェスト内の依存関係を最新版にアップグレード
+- pixi lock - マニフェストのロックファイルを作成または更新
+- pixi info - ワークスペースに関する情報を表示
+- pixi run - マニフェストで定義されたタスク、または現在の環境内の任意のコマンドを実行
+- pixi shell - 現在の環境でシェルを起動
+- pixi list - 現在の環境内の全依存関係を表示
+- pixi tree - 現在の環境内の依存関係ツリーを表示
+- pixi clean - マシンから環境を削除
+
+### グローバル環境の管理
+Pixiはツールや環境のグローバルインストールを管理できます。
+環境を共用の場所にインストールするため、どこからでも利用可能です。
+- pixi global install - パッケージをグローバル空間内の独自の環境にインストールします。
+- pixi global uninstall - グローバル空間から環境をアンインストールします。
+- pixi global add - 既存のグローバルインストール済み環境にパッケージを追加します。
+- pixi global sync - インストールしたいすべての環境を記述したグローバルマニフェストと、グローバルにインストールされた環境を同期する。
+- pixi global edit - グローバルマニフェストを編集する。
+- pixi global update - グローバル環境を更新する。
+- pixi global list - インストール済みのすべての環境を一覧表示する。
+
+### 単発コマンドの実行
+Pixiは特定の環境で単発コマンドを実行できます。
+```
+pixi exec - 一時環境でコマンドを実行します。
+pixi exec --spec - 特定の仕様で一時環境を指定しコマンドを実行します。
+```
+例えば、
+```
+> pixi exec python -VV
+Python 3.13.5 | packaged by conda-forge | (main, Jun 16 2025, 08:24:05) [Clang 18.1.8 ]
+> pixi exec --spec "python=3.12" python -VV
+Python 3.12.11 | packaged by conda-forge | (main, Jun  4 2025, 14:38:53) [Clang 18.1.8 ]
+```
+
+### 複数の環境
+Pixiワークスペースでは複数の環境を管理できます。
+環境は1つ以上の機能で構成されます。
+```
+pixi add --feature - 機能にパッケージを追加
+pixi task add --feature - 特定の機能にタスクを追加
+pixi workspace environment add - ワークスペースに環境を追加
+pixi run --environment - 特定の環境でコマンドを実行
+pixi shell --environment - 特定の環境をアクティブ化
+pixi list --environment - 特定の環境の依存関係を表示
+```
+
+### タスク
+Pixiは組み込みのタスクランナーを使用してクロスプラットフォームタスクを実行できます。
+これは事前定義されたタスクでも、通常の実行可能ファイルでも構いません。
+```
+pixi run - タスクまたはコマンドを実行
+pixi task add - マニフェストに新しいタスクを追加
+```
+タスクは他のタスクを依存関係として持つことができます。
+以下はより複雑なタスクのユースケース例です
+```
+pixi.toml
+
+[tasks]
+build = "make build"
+# using the toml table view
+[tasks.test]
+cmd = "pytest"
+depends-on = ["build"]
+```
+
+## マルチプラットフォームサポート#
+Pixiは最初から複数のプラットフォームをサポートしています。
+ワークスペースがサポートするプラットフォームを指定すると、Pixiがそれらのプラットフォームと互換性のある依存関係を確保します。
+```
+pixi add --platform - 特定のプラットフォームのみにパッケージを追加
+pixi workspace platform add - サポートしたいプラットフォームをワークスペースに追加
+```
+
+## ユーティリティ
+Pixiには、デバッグや設定管理を支援する一連のユーティリティが付属しています。
+```
+pixi info - 現在のワークスペースとグローバル設定に関する情報を表示します。
+pixi config - Pixiの設定を表示または編集します。
+pixi tree - 現在の環境における依存関係のツリーを表示します。
+pixi list - 現在の環境にあるすべての依存関係を一覧表示します。
+pixi clean - マシンからワークスペース環境を削除します。
+pixi help - Pixi コマンドのヘルプを表示します。
+pixi help <サブコマンド> - 特定の Pixi コマンドのヘルプを表示します。
+pixi auth - conda チャネルの認証を管理します。
+pixi search - 設定済みのチャネル内でパッケージを検索します。
+pixi completion - Pixi コマンド用のシェル補完スクリプトを生成します。
+```
+
+
+
