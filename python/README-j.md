@@ -286,8 +286,8 @@ pixi init
 ```
 を実行できます。
 Pixi は自動的に以下を行います：
-1. [tool.pixi.workspace] セクションの追加
-— Pixi に必要な platform と channel の情報が入る
+1. [tool.pixi.workspace] セクションの追加<br>
+- Pixi に必要な platform と channel の情報が入る
 2. 現在のプロジェクトを editable な PyPI 依存として追加
 3. .gitignore と .gitattributes に Pixi 用のデフォルト設定を追加
 
