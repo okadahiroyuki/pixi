@@ -311,6 +311,8 @@ pixi completion - Pixi コマンド用のシェル補完スクリプトを生成
 ## チュートリアル
 ### Python
 
+https://github.com/okadahiroyuki/pixi/blob/main/python/README-ja.md
+
 ### ROS2
 
 
