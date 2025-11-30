@@ -298,7 +298,241 @@ pixi init --format pyproject
 を実行すると、Pixi がゼロから適切なデフォルトを含んだ pyproject.toml を生成します。
 
 
+### Python のバージョン依存（requires-python）
+pyproject.toml は requires-python フィールドをサポートしています。
+Pixi はこのフィールドを読み取り、Python の依存関係として自動的に追加します。
 
+例：
+```
+[project]
+name = "my_project"
+requires-python = ">=3.9"
 
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
+```
+これは pixi.toml の次と等価です：
+```
+[workspace]
+name = "my_project"
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
+
+[dependencies]
+python = ">=3.9"
+```
+### 依存関係（dependencies）セクション
+pyproject.toml の dependencies フィールドは、
+Pixi では [pypi-dependencies] として扱われます。
+
+例：
+```
+[project]
+name = "my_project"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "pandas",
+    "matplotlib",
+]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
+```
+
+Pixi では次と等価：
+```
+[workspace]
+name = "my_project"
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
+
+[pypi-dependencies]
+numpy = "*"
+pandas = "*"
+matplotlib = "*"
+
+[dependencies]
+python = ">=3.9"
+```
+### conda 依存で上書きも可能
+pypi-dependencies を無視して conda を優先したい場合：
+```
+[tool.pixi.dependencies]
+numpy = "*"
+pandas = "*"
+matplotlib = "*"
+```
+Pixi は conda の依存関係を優先するため、PyPI 依存は無視されます。
+
+### オプショナル依存（optional-dependencies）
+Python プロジェクトに optional dependencies がある場合、
+Pixi はそれらを 同名の Pixi feature として解釈し、
+該当する pypi-dependencies を設定します。
+
+Pixi の環境に手動で追加することもできますし、
+pixi init を使えば自動的に feature ごとに environment を作成します。
+
+自己参照（他の optional group を含む）も対応しています。
+
+例：
+```
+[project]
+name = "my_project"
+dependencies = ["package1"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+all = ["package2","my_project[test]"]
+```
+
+pixi init の結果：
+```
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.environments]
+default = {features = [], solve-group = "default"}
+test = {features = ["test"], solve-group = "default"}
+all = {features = ["all"], solve-group = "default"}
+```
+
+Pixi が作る環境：
+```
+環境	含まれる依存
+default	package1
+test	package1 + pytest
+all	package1 + package2 + pytest
+```
+
+### Dependency Groups（PEP 735）
+dependency-groups も optional-dependencies と同様に
+Pixi の feature として扱われます。
+
+例：
+```
+[project]
+name = "my_project"
+dependencies = ["package1"]
+
+[dependency-groups]
+test = ["pytest"]
+docs = ["sphinx"]
+dev = [{include-group = "test"}, {include-group = "docs"}]
+```
+
+pixi init 後：
+```
+[tool.pixi.environments]
+default = {features = [], solve-group = "default"}
+test = {features = ["test"], solve-group = "default"}
+docs = {features = ["docs"], solve-group = "default"}
+dev = {features = ["dev"], solve-group = "default"}
+```
+
+Pixi が作る環境：
+```
+環境	依存
+default	package1
+test	package1 + pytest
+docs	package1 + sphinx
+dev	package1 + pytest + sphinx
+```
+
+### Pixi 全機能を pyproject.toml で書く例
+```
+[project]
+name = "my_project"
+requires-python = ">=3.9"
+dependencies = ["numpy","pandas","matplotlib","ruff"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64","osx-arm64","osx-64","win-64"]
+
+[tool.pixi.dependencies]
+compilers = "*"
+cmake = "*"
+
+[tool.pixi.tasks]
+start = "python my_project/main.py"
+lint = "ruff lint"
+
+[tool.pixi.system-requirements]
+cuda = "11.0"
+
+[tool.pixi.feature.test.dependencies]
+pytest = "*"
+
+[tool.pixi.feature.test.tasks]
+test = "pytest"
+
+[tool.pixi.environments]
+test = ["test"]
 
 ## Pytorch Installation
+```
+
+### [build-system] セクション
+
+通常 pyproject.toml には [build-system] が存在します。
+Pixi はこの設定を使用して、
+PyPI パス依存（path dependency）のビルド & インストールを行います。
+
+[build-system] が無い場合、
+Pixi は uv のデフォルト（以下と同等）を使います：
+```
+[build-system]
+requires = ["setuptools >= 40.8.0"]
+build-backend = "setuptools.build_meta:__legacy__"
+```
+
+含めることが強く推奨されます。
+迷う場合は以下を追加すれば安全：
+```
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+```
+
+Pixi は pyproject 初期化時に hatchling を採用します。
+
+### [tool.uv.sources] による開発依存の扱い
+
+Pixi は PyPI パッケージのビルドに uv を使うため、
+[tool.uv.sources] を使って PyPI 依存のソース元を指定できます。
+
+#### これは何に役立つ？
+
+モノレポ構成などで、
+複数の Python パッケージがお互いを参照する場合、
+tool.uv.sources を使うと便利です。
+
+例：
+
+ディレクトリ構成：
+```
+.
+├── main_project
+│   └── pyproject.toml (a を参照)
+├── a
+│   └── pyproject.toml (b に依存)
+└── b
+    └── pyproject.toml
+```
+
+main_project の設定：
+```
+[tool.pixi.pypi-dependencies]
+a = { path = "../a" }
+```
+
+a の pyproject.toml には：
+```
+[tool.uv.sources]
+flask = { git = "github.com/pallets/flask", branch = "main" }
+b = { path = "../b" }
+```
