@@ -11,6 +11,17 @@ Pixi は conda エコシステムの上に構築されており、必要なす�
 Pixi は pyproject.toml と pixi.toml の2種類のマニフェスト形式をサポートします。
 このチュートリアルでは、一般的な Python プロジェクトで最も普及している pyproject.toml を使用します。
 
+#### pyproject.toml：Python 標準のプロジェクト定義ファイル
+Python の公式仕様（PEP 518/621）に基づく 標準的なプロジェクト設定ファイル。
+- 主な特徴
+    - Python プロジェクトの メタデータを書く場所
+    例：name / version / authors / requires-python
+    - Python の **ビルドシステム（hatchling, setuptools など）**を指定
+    - PyPI パッケージに関する情報を書く
+    - 他のツール（ruff, black, pytest, mypy, etc.）の設定も含めやすい
+- Pixi もこのファイルを読める
+Pixi は tool.pixi.* セクションを追加して、環境管理のために使用する。
+
 ### はじめよう
 まず pyproject.toml を使う新しいプロジェクトを作成します：
 ```
