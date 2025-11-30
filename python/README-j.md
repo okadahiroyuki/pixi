@@ -14,13 +14,24 @@ Pixi は pyproject.toml と pixi.toml の2種類のマニフェスト形式を�
 #### pyproject.toml：Python 標準のプロジェクト定義ファイル
 Python の公式仕様（PEP 518/621）に基づく 標準的なプロジェクト設定ファイル。
 - 主な特徴
-    - Python プロジェクトの メタデータを書く場所
-    例：name / version / authors / requires-python
+    - Python プロジェクトの メタデータを書く場所: 例：name / version / authors / requires-python
     - Python の **ビルドシステム（hatchling, setuptools など）**を指定
     - PyPI パッケージに関する情報を書く
     - 他のツール（ruff, black, pytest, mypy, etc.）の設定も含めやすい
 - Pixi もこのファイルを読める
 Pixi は tool.pixi.* セクションを追加して、環境管理のために使用する。
+
+
+#### pixi.toml：Pixi 専用の設定ファイル（Pixi だけで使う）
+Pixi が提供する 独自形式の設定ファイル。
+- 主な特徴
+    - Pixi の 環境管理と 依存関係管理だけを行う
+    - PyPI ではなく Pixi の workspace だけで完結
+    - Python 以外のプロジェクトにも使いやすい（Rust / C++ / Go など）
+- Python プロジェクトでなくても使える
+Pixi は "language-agnostic（言語に依存しない）" を目指しているため、pixi.toml を使えば Python 以外のプロジェクトでも Pixi 管理が可能。
+
+Pixi は pyproject.toml を使うことを推奨しており、Python プロジェクトではほぼこちら一択になる。
 
 ### はじめよう
 まず pyproject.toml を使う新しいプロジェクトを作成します：
@@ -79,6 +90,28 @@ Pixi は editable インストールを pyproject.toml に明示的に記述し�
 これにより、どの environment にパッケージを含めるかを柔軟に指定できます。
 
 ### Conda と PyPI 依存関係の管理
+conda と PyPI(pip) は「どちらもパッケージ管理システム」だが、目的も仕組みも別物です。
+
+#### conda
+- パッケージは 完全にビルドされたバイナリ
+- 依存関係（C ライブラリや OS 依存も含む）を一括で管理
+- 「環境の再現性が高い」
+例：
+- numpy + OpenBLAS
+- pytorch + CUDA
+- opencv + FFmpeg
+などが そのまま使える状態で配布される。
+
+#### PyPI（pip）
+- 主に Python コードのみ配布
+- ネイティブ部分は「環境に合わせてビルド」が必要なことがある
+- C/C++ 依存は OS のライブラリに依存する
+
+例：
+- GDAL（pip 版はビルドが大変）
+- OpenCV（pip 版は機能制限あり）
+
+
 他のパッケージに依存させたい場合：
 ```
 cd pixi-py
