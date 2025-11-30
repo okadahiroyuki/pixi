@@ -242,7 +242,62 @@ test_me.py .                                                                    
 
 ================================================================================================== 1 passed in 0.00s =================================================================================================
 ```
+### テスト環境とデフォルト環境の比較
+テスト環境とデフォルト環境の出力を比較してみましょう。
+環境内の明示的な依存関係を表示するために --explicit フラグを追加します。
 
+```
+pixi list --explicit --environment test
+# vs. default environment
+pixi list --explicit
+```
+テスト環境には以下のものが存在することが確認できます：
+```
+package          version       build               size       kind   source
+...
+pytest           8.1.1                             1.1 mib    pypi   pytest-8.1.1-py3-none-any.whl
+...
+```
+デフォルト環境にはpytestパッケージがインストールされていません。
+これにより、各環境に必要なパッケージのみをインストールする形で環境を微調整できます。
+例えば、開発環境にはpytestとruffをインストールしつつ、本番環境ではこれらを除外することも可能です。
+最小限の本番環境を設定し、そこからコピーする方法を示す[Docker](https://github.com/prefix-dev/pixi/tree/main/examples/docker)の例があります。
+
+### PyPIパッケージをcondaパッケージに置き換える
+Pixiはpypiパッケージがcondaパッケージに依存する機能を提供します。これを次のコマンドで確認しましょう：
+```
+pixi tree --invert pygments
+```
+pyproject.tomlファイルにpygmentsを明示的に追加しましょう。
+```
+pixi add pygments
+```
+これにより、pyproject.tomlファイルに以下が追加されます：
+```
+[tool.pixi.dependencies]
+pygments = "=2.19.1,<3"
+
+```
+pygmentsパッケージがcondaパッケージとしてインストールされたことが確認できます。
+```
+pixi list pygments
+```
+結果として次のようになります：
+```
+Package   Version  Build         Size       Kind   Source
+pygments  2.19.1   pyhd8ed1ab_0  867.8 KiB  conda  pygments
+```
+この方法により、PyPI依存関係とconda依存関係を組み合わせてシームレスに相互運用できます。
+```
+pixi run python -c 'import pixi_py; pixi_py.say_hello()'
+```
+そして今でもちゃんと動きます.
+
+### 終わり
+このチュートリアルでは、pyproject.toml を使用して Pixi の依存関係と環境を管理することがいかに簡単かを学びました。
+また、同じワークスペース内で PyPI と conda の依存関係をシームレスに併用する方法や、Python パッケージを管理するためのオプション依存関係をインストールする方法についても探求しました。
+
+これにより、Python プロジェクトを柔軟かつ強力に管理する方法が提供され、Pixi を使ったさらなる探求のための豊かな基盤となることを願っています。
 
 
 ## pyproject.toml
