@@ -67,14 +67,46 @@ platforms = ["osx-arm64"]
 pixi_pyパッケージ自体は編集可能な依存関係として追加されます。これはパッケージが編集モードでインストールされることを意味し、環境を再インストールすることなく、パッケージに変更を加えてその変更を環境に反映させることができます。
 
 
+### CondaとPyPIの両方の依存関係を管理する
+プロジェクトは通常、他のパッケージに依存しています。
+```
+cd pixi-py # Move into the project directory
+pixi add black
+```
+これにより、blackパッケージがCondaパッケージとしてpyproject.tomlファイルに追加されます。
+その結果、pyproject.tomlには以下の内容が付加されます：
+```
+[tool.pixi.dependencies]
+black = ">=25.1.0,<26"
+```
+ただし、使用すべきバージョンについて厳密に指定することも可能です。
+```
+pixi add black=25
+```
+その結果、
+```
+[tool.pixi.dependencies]
+black = "25.*"
+```
+condaチャネルでは利用できないがPyPIに公開されているパッケージが存在する場合があります。
+```
+pixi add black --pypi
+```
+その結果、pyproject.tomlのdependenciesキーに追加されます
+```
+dependencies = ["black"]
+```
+pypi依存関係を使用する際、他のパッケージが追加機能として提供するオプション依存関係を利用できます。
+例えば、flaskはasync依存関係オプションを提供しており、--pypiキーワードで追加できます：
+```
+pixi add "flask[async]==3.1.0" --pypi
+```
+依存関係エントリを更新して
+```
+dependencies = ["black", "flask[async]==3.1.0"]
+```
 
-
-
-
-
-
-
-
+### 
 
 
 
