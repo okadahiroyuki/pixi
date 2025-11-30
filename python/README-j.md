@@ -536,3 +536,205 @@ a の pyproject.toml には：
 flask = { git = "github.com/pallets/flask", branch = "main" }
 b = { path = "../b" }
 ```
+
+## PyTorch のインストール
+### 概要
+このガイドでは、Pixi と PyTorch を統合する方法を説明します。
+Pixi は複数の方法で PyTorch をインストールすることができます。
+- conda-forge の Conda チャンネル経由で PyTorch をインストールする（推奨）
+- uv との連携を用いて、PyPI から PyTorch をインストールする（利用可能なバージョンが最も多い）
+- pytorch Conda チャンネルから PyTorch をインストールする（レガシー）
+
+これらの選択肢によって、要件に応じて最適なインストール方法を選べます。
+
+### システム要件
+PyTorch の文脈において、システム要件は Pixi に対して「CUDA 関連パッケージをインストール・利用できるかどうか」を伝える役割を持ちます。
+これにより、依存関係の解決時に互換性が保たれます。
+
+ここでの鍵となるメカニズムが、__cuda のような「仮想パッケージ (virtual packages)」の利用です。
+仮想パッケージは、利用可能なシステム機能（例：CUDA のバージョン）を表します。
+
+system-requirements.cuda = "12" と指定することで、
+「CUDA 12 が利用可能であり、解決時に使用できる」ことを Pixi に伝えます。
+
+例：
+
+- あるパッケージが __cuda >= 12 に依存している場合、Pixi は適切なバージョンを解決します。
+- あるパッケージがバージョン指定なしに __cuda に依存している場合、利用可能な任意の CUDA バージョンが使われます。
+- system-requirements.cuda を適切に指定しない場合、Pixi はデフォルトで CPU版のみ の PyTorch およびその依存パッケージをインストールします。
+
+### conda-forge からのインストール
+conda-forge チャンネルを使って PyTorch をインストールすることができます。
+これらは conda-forge コミュニティによってメンテナンスされているビルドです。
+NVIDIA 提供のパッケージを直接利用することで、各パッケージが互いに正しく動作するようにできます。
+
+#### 最小構成の conda-forge + CUDA 版 PyTorch インストール例
+```
+[workspace]
+channels = ["https://prefix.dev/conda-forge"]
+name = "pytorch-conda-forge"
+platforms = ["linux-64", "win-64"]
+
+[system-requirements]
+cuda = "12.0"
+
+[dependencies]
+pytorch-gpu = "*"
+```
+
+特定バージョンの CUDA パッケージを明示的にインストールしたい場合は、cuda-version パッケージに依存させます。
+これにより、他のパッケージが解決時にこの指定を解釈します。
+cuda-version パッケージは __cuda 仮想パッケージと cudatoolkit パッケージのバージョンを制約します。
+これによって、cudatoolkit の正しいバージョンがインストールされ、依存ツリーが正しく解決されます。
+
+#### conda-forge PyTorch インストールに CUDA バージョンを追加
+```
+[dependencies]
+pytorch-gpu = "*"
+cuda-version = "12.6.*"
+```
+conda-forge では PyTorch の CPU 版 をインストールすることもできます。
+よくあるユースケースとしては、「CUDA 搭載マシン用」と「非 CUDA マシン用」で 2つの環境を用意するパターンです。
+
+#### CPU 用環境の追加例
+```
+[workspace]
+channels = ["https://prefix.dev/conda-forge"]
+name = "pytorch-conda-forge"
+platforms = ["linux-64"]
+
+[feature.gpu.system-requirements]
+cuda = "12.0"
+
+[feature.gpu.dependencies]
+cuda-version = "12.6.*"
+pytorch-gpu = "*"
+
+[feature.cpu.dependencies]
+pytorch-cpu = "*"
+
+[environments]
+cpu = ["cpu"]
+default = ["gpu"]
+```
+
+これらの環境は pixi run コマンドで実行できます。
+```
+pixi run --environment cpu python -c "import torch; print(torch.cuda.is_available())"
+pixi run -e gpu python -c "import torch; print(torch.cuda.is_available())"
+```
+
+ここから先は、自分の依存パッケージやタスクを追加して拡張していけばよいでしょう。
+
+代表的なパッケージへのリンク：
+- pytorch
+- pytorch-cpu
+- pytorch-gpu
+- torchvision
+- torchaudio
+- cuda-version
+
+### PyPI からのインストール
+uv との統合により、PyPI から PyTorch をインストールすることもできます。
+
+[dependencies] と [pypi-dependencies] を混在させる場合の注意
+
+この方法で torch パッケージを扱う場合、torch に依存するパッケージも PyPI からインストールすべきです。
+つまり、
+```
+Conda パッケージが PyPI の torch に依存するような形にしない
+```
+ことが重要です。
+
+その理由は、Pixi の依存解決が 2段階 になっているためです：
+
+1. まず Conda パッケージを解決
+2. その後 PyPI パッケージを解決
+
+したがって、「Conda パッケージが PyPI パッケージに依存する」構造は解決不可能になります。
+
+#### PyTorch インデックス（PyPI 側）
+PyTorch のパッケージは、PyTorch チームが管理する専用インデックスから提供されます。
+これは Conda チャンネルに似た仕組みです。
+PyTorch をこのインデックスからインストールするには、依存関係ごとに index を明示するのが最善です（その index を必ず使わせるため）。
+
+- CPU のみ: https://download.pytorch.org/whl/cpu
+- CUDA 11.8: https://download.pytorch.org/whl/cu118
+- CUDA 12.1: https://download.pytorch.org/whl/cu121
+- CUDA 12.4: https://download.pytorch.org/whl/cu124
+- ROCm 6: https://download.pytorch.org/whl/rocm6.2
+
+#### PyPI から PyTorch をインストールする例
+```
+[workspace]
+channels = ["https://prefix.dev/conda-forge"]
+name = "pytorch-pypi"
+platforms = ["osx-arm64", "linux-64", "win-64"]
+
+[dependencies]
+# pytorch と互換性のある python バージョンが必要
+python = ">=3.11,<3.13"
+
+[pypi-dependencies]
+torch = { version = ">=2.5.1", index = "https://download.pytorch.org/whl/cu124" }
+torchvision = { version = ">=0.20.1", index = "https://download.pytorch.org/whl/cu124" }
+
+[target.osx.pypi-dependencies]
+# macOS は CUDA 非対応なので CPU 版を使用
+torch = { version = ">=2.5.1", index = "https://download.pytorch.org/whl/cpu" }
+torchvision = { version = ">=0.20.1", index = "https://download.pytorch.org/whl/cpu" }
+```
+
+Pixi に対して、CPU 版 と GPU 版で別々の環境を使わせることもできます。
+
+#### 複数の PyTorch バージョン（CPU / GPU）を環境で分ける例
+```
+[workspace]
+channels = ["https://prefix.dev/conda-forge"]
+name = "pytorch-pypi-envs"
+platforms = ["linux-64", "win-64"]
+
+[dependencies]
+# pytorch と互換性のある python バージョンが必要
+python = ">=3.11,<3.13"
+
+[feature.gpu]
+system-requirements = { cuda = "12.0" }
+[feature.gpu.pypi-dependencies]
+torch = { version = ">=2.5.1", index = "https://download.pytorch.org/whl/cu124" }
+torchvision = { version = ">=0.20.1", index = "https://download.pytorch.org/whl/cu124" }
+
+[feature.cpu.pypi-dependencies]
+torch = { version = ">=2.5.1", index = "https://download.pytorch.org/whl/cpu" }
+torchvision = { version = ">=0.20.1", index = "https://download.pytorch.org/whl/cpu" }
+
+[environments]
+gpu = { features = ["gpu"] }
+# CPU 環境をデフォルトにする
+default = { features = ["cpu"] }
+```
+
+実行例：
+```
+pixi run --environment cpu python -c "import torch; print(torch.__version__); print(torch.cuda.is_available())"
+pixi run -e gpu python -c "import torch; print(torch.__version__); print(torch.cuda.is_available())"
+```
+
+#### macOS と CUDA を pypi-dependencies で混在させる場合
+pypi-dependencies を使うとき、Pixi は PyPI 依存を解決するための「解決用環境 (solve environment)」を作成します。
+これは、
+
+1. Conda 依存をインストール
+2. その環境内で PyPI 依存を解決
+
+という流れで処理します。
+
+このとき、macOS マシン上で Linux/Windows 向け CUDA 対応版の PyTorch を解決しようとすると問題になります。
+macOS はこれらの CUDA 環境をサポートしていないため、CUDA 用の Conda 依存がインストールできず、解決が失敗します。
+
+現状：<br>
+Pixi のメンテナはこの制限を認識しており、
+こうしたケースでのクロスプラットフォーム依存解決を可能にする解決策に取り組んでいます。
+
+それまでは、Linux や Windows など CUDA 対応のマシン上で解決処理を行う必要があるかもしれません。
+
