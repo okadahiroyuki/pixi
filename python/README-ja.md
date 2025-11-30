@@ -106,11 +106,40 @@ pixi add "flask[async]==3.1.0" --pypi
 dependencies = ["black", "flask[async]==3.1.0"]
 ```
 
-### 
+### インストール: pixi install
+Pixiは環境を実行する際、常にpyproject.tomlファイルで環境が最新であることを保証します。手
+動で実行したい場合は、以下を実行できます:
+```
+pixi install
+```
+ワークスペースのルートに.pixiという新しいディレクトリが作成されました。
+この環境はConda環境であり、CondaおよびPyPIの依存関係がすべてインストールされています。
 
+この環境は常にpixi.lockファイルの結果であり、このファイルはpyproject.tomlファイルから生成されます。
+このファイルには、プラットフォームを問わず環境にインストールされた依存関係の正確なバージョンが記載されています。
 
-
-
+### 環境には何が含まれているのか？
+pixi list を使用すると、環境に含まれる内容を確認できます。
+これは基本的にロックファイル（pixi.lock）をより見やすく表示したものです：
+```
+Package          Version     Build               Size       Kind   Source
+asgiref          3.8.1                           68.5 KiB   pypi   asgiref-3.8.1-py3-none-any.whl
+black            24.10.0     py313h8f79df9_0     388.7 KiB  conda  black
+blinker          1.9.0                           23.9 KiB   pypi   blinker-1.9.0-py3-none-any.whl
+bzip2            1.0.8       h99b78c6_7          120 KiB    conda  bzip2
+ca-certificates  2024.12.14  hf0a4a13_0          153.4 KiB  conda  ca-certificates
+click            8.1.8       pyh707e725_0        82.7 KiB   conda  click
+flask            3.1.0                           335.9 KiB  pypi   flask-3.1.0-py3-none-any.whl
+itsdangerous     2.2.0                           45.8 KiB   pypi   itsdangerous-2.2.0-py3-none-any.whl
+...
+...
+tzdata           2025a       h78e105d_0          120 KiB    conda  tzdata
+werkzeug         3.1.3                           743 KiB    pypi   werkzeug-3.1.3-py3-none-any.whl
+```
+ここでは、さまざまなcondaおよびPypiパッケージが一覧表示されています。
+ご覧の通り、現在作業中のpixi-pyパッケージは編集可能な状態でインストールされています。
+Pixiの環境はすべて分離されていますが、中央キャッシュディレクトリからハードリンクされたファイルを再利用します。
+つまり、同じパッケージを持つ複数の環境を作成でき、個々のファイルはディスク上に一度だけ保存されることになります。
 
 
 
